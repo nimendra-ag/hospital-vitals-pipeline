@@ -1,0 +1,26 @@
+# Kafka
+confluent-kafka==2.3.0
+kafka-python==2.0.2
+
+# Spark
+pyspark==3.5.1
+
+# Database
+psycopg2-binary==2.9.9
+
+# API
+fastapi==0.111.0
+uvicorn==0.30.1
+
+# Orchestration
+apache-airflow==2.9.1
+
+# Observability
+structlog==24.2.0
+prometheus-client==0.20.0
+
+# Utilities
+python-dotenv==1.0.1
+pandas==2.2.2
+schedule==1.2.2
+Jinja2==3.1.4
