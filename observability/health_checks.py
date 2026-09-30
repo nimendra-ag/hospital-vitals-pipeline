@@ -43,6 +43,20 @@ def check_data_staleness() -> list[dict]:
         (NO_DATA_THRESHOLD,),
     )
 
+    # Auto-resolve: once a patient's data is flowing again, close their open
+    # staleness alert so it doesn't linger on the dashboard forever.
+    from storage.db import execute_write
+
+    stale_ids = [row["patient_id"] for row in stale_patients] or ["__none__"]
+    resolved = execute_write(
+        "UPDATE alerts SET acknowledged = TRUE "
+        "WHERE alert_type = 'DATA_STALENESS' AND acknowledged = FALSE "
+        "AND patient_id <> ALL(%s)",
+        (stale_ids,),
+    )
+    if resolved:
+        logger.info("data_staleness_resolved", count=resolved)
+
     if not stale_patients:
         return []
 

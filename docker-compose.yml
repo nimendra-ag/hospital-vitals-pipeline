@@ -1,6 +1,6 @@
-version: "3.8"
-
 services:
+  # ── Ingestion ────────────────────────────────────────────────────
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     container_name: zookeeper
@@ -10,7 +10,8 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
     healthcheck:
-      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      # Port-level liveness check (the image has no nc; bash /dev/tcp works).
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/2181' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -40,6 +41,30 @@ services:
       timeout: 10s
       retries: 10
 
+  # ── Storage / serving store ──────────────────────────────────────
+
+  postgres:
+    image: postgres:15
+    container_name: hospital-db
+    environment:
+      POSTGRES_USER: hospital
+      POSTGRES_PASSWORD: hospital
+      POSTGRES_DB: hospital_vitals
+    ports:
+      # 5433 on the host so it doesn't clash with a locally installed Postgres.
+      - "5433:5432"
+    volumes:
+      # Schema + seed data applied automatically on first boot.
+      - ./storage/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+      - hospital_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "hospital", "-d", "hospital_vitals"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Orchestration (batch layer) ──────────────────────────────────
+
   airflow-db:
     image: postgres:15
     container_name: airflow-db
@@ -63,6 +88,8 @@ services:
     depends_on:
       airflow-db:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
     ports:
       - "8081:8080"
     environment:
@@ -75,6 +102,10 @@ services:
       _AIRFLOW_WWW_USER_EMAIL: admin@example.com
       _AIRFLOW_WWW_USER_FIRSTNAME: Admin
       _AIRFLOW_WWW_USER_LASTNAME: User
+      # Container-network addresses override the host-oriented values in .env
+      # (python-dotenv never overrides variables that are already set).
+      DATABASE_URL: postgresql://hospital:hospital@postgres:5432/hospital_vitals
+      PUSHGATEWAY_URL: pushgateway:9091
     working_dir: /opt/airflow/project
     volumes:
       - ./orchestration:/opt/airflow/project/orchestration:ro
@@ -87,6 +118,78 @@ services:
       - airflow_home:/opt/airflow
     command: ["bash", "-c", "rm -f /opt/airflow/airflow-webserver.pid /opt/airflow/airflow-webserver-monitor.pid; exec airflow standalone"]
 
+  # ── Observability stack ──────────────────────────────────────────
+
+  pushgateway:
+    image: prom/pushgateway:v1.9.0
+    container_name: pushgateway
+    ports:
+      - "9091:9091"
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:latest
+    container_name: kafka-exporter
+    restart: on-failure
+    depends_on:
+      kafka:
+        condition: service_healthy
+    command: ["--kafka.server=kafka:29092"]
+    ports:
+      - "9308:9308"
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus
+    depends_on:
+      - pushgateway
+      - kafka-exporter
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
+    volumes:
+      - ./observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    ports:
+      - "9093:9093"
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: grafana
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+
+  # ── Clinician-facing dashboard ───────────────────────────────────
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    container_name: frontend
+    ports:
+      - "3001:3001"
+
 volumes:
+  hospital_db_data:
   airflow_home:
   airflow_db_data:
+  prometheus_data:
+  grafana_data:
