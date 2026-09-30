@@ -38,13 +38,42 @@ def check_data_staleness() -> list[dict]:
         LEFT JOIN vitals_aggregates v ON p.patient_id = v.patient_id
         GROUP BY p.patient_id, p.name
         HAVING MAX(v.window_end) IS NULL
-           OR MAX(v.window_end) < NOW() - INTERVAL '%s seconds'
+           OR MAX(v.window_end) < (NOW() AT TIME ZONE 'UTC') - INTERVAL '%s seconds'
         """,
         (NO_DATA_THRESHOLD,),
     )
 
+    # Auto-resolve: once a patient's data is flowing again, close their open
+    # staleness alert so it doesn't linger on the dashboard forever.
+    from storage.db import execute_write
+
+    stale_ids = [row["patient_id"] for row in stale_patients] or ["__none__"]
+    resolved = execute_write(
+        "UPDATE alerts SET acknowledged = TRUE "
+        "WHERE alert_type = 'DATA_STALENESS' AND acknowledged = FALSE "
+        "AND patient_id <> ALL(%s)",
+        (stale_ids,),
+    )
+    if resolved:
+        logger.info("data_staleness_resolved", count=resolved)
+
+    if not stale_patients:
+        return []
+
+    # Staleness is an ongoing condition, not a discrete event — don't open
+    # a new alert for a patient who already has one unacknowledged, or
+    # every 30s check cycle floods the alerts table for as long as the
+    # condition persists.
+    already_open = execute_query(
+        "SELECT DISTINCT patient_id FROM alerts "
+        "WHERE alert_type = 'DATA_STALENESS' AND acknowledged = FALSE"
+    )
+    already_open_ids = {row["patient_id"] for row in already_open}
+
     alerts = []
     for row in stale_patients:
+        if row["patient_id"] in already_open_ids:
+            continue
         alert = {
             "patient_id": row["patient_id"],
             "alert_type": "DATA_STALENESS",
@@ -78,6 +107,15 @@ def check_error_rate() -> list[dict]:
     alerts = []
 
     if error_rate > ERROR_RATE_THRESHOLD:
+        from storage.db import execute_query
+
+        already_open = execute_query(
+            "SELECT 1 FROM alerts WHERE alert_type = 'HIGH_ERROR_RATE' "
+            "AND acknowledged = FALSE LIMIT 1"
+        )
+        if already_open:
+            return []
+
         alert = {
             "patient_id": "SYSTEM",
             "alert_type": "HIGH_ERROR_RATE",

@@ -13,7 +13,7 @@ fastapi==0.111.0
 uvicorn==0.30.1
 
 # Orchestration
-apache-airflow==2.9.1
+# apache-airflow runs in Docker (orchestration/Dockerfile.airflow); not needed on the host
 
 # Observability
 structlog==24.2.0
@@ -24,3 +24,6 @@ python-dotenv==1.0.1
 pandas==2.2.2
 schedule==1.2.2
 Jinja2==3.1.4
+
+# Tests
+pytest==8.3.3

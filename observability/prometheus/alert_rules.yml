@@ -1,0 +1,94 @@
+groups:
+  - name: hospital-vitals-pipeline
+    rules:
+
+      # ── Ingestion staleness ──────────────────────────────────────
+      - alert: VitalsIngestionStale
+        expr: time() - hospital_component_heartbeat_timestamp_seconds{component="vitals_producer"} > 60
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Bedside vitals producer has gone quiet"
+          description: >
+            No heartbeat from the vitals_producer component in over 60s.
+            The streaming source may have crashed or lost its Kafka connection.
+
+      - alert: LabGeneratorStale
+        expr: time() - hospital_component_heartbeat_timestamp_seconds{component="lab_generator"} > 600
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Daily lab file generator has not run recently"
+          description: >
+            No new lab results file in over 10 minutes (2x the default
+            simulated-day length of 300s). Check the lab_results_generator process.
+
+      - alert: NoRecentVitalsData
+        expr: hospital_oldest_vitals_reading_age_seconds > 90
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "A patient has stale vitals data"
+          description: >
+            At least one patient's most recent vitals aggregate window is
+            over 90 seconds old — the speed layer may be lagging or the
+            Kafka topic has gone quiet for that patient.
+
+      - alert: SpeedLayerStale
+        expr: time() - hospital_component_heartbeat_timestamp_seconds{component="speed_layer"} > 90
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Spark speed layer has stopped writing"
+          description: >
+            No micro-batch from the Spark Structured Streaming job in over 90s
+            (it writes aggregates every 10s). A streaming query has probably
+            failed; check the processor's streaming_query_failed log line.
+
+      - alert: BatchLayerStale
+        expr: time() - hospital_component_heartbeat_timestamp_seconds{component="batch_layer"} > 900
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Daily batch layer has not completed a run recently"
+          description: >
+            No successful Airflow batch run in 15 minutes (3 simulated days).
+            Check the daily_patient_risk_pipeline DAG in the Airflow UI.
+
+      # ── Error rates ──────────────────────────────────────────────
+      - alert: HighVitalsSendErrorRate
+        expr: >
+          (rate(hospital_vitals_send_errors_total{job="vitals_producer"}[5m])
+            / clamp_min(rate(hospital_vitals_records_sent_total{job="vitals_producer"}[5m]), 1))
+          > 0.05
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Vitals Kafka delivery error rate above 5%"
+          description: "{{ $value | humanizePercentage }} of vitals deliveries are failing."
+
+      # ── Clinical / business signal ───────────────────────────────
+      - alert: ActiveCriticalPatientAlerts
+        expr: hospital_active_alerts{severity="CRITICAL"} > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Unacknowledged CRITICAL patient alerts"
+          description: "{{ $value }} unacknowledged CRITICAL alert(s) active in the ward."
+
+      # ── Infrastructure ───────────────────────────────────────────
+      - alert: PipelineComponentUnreachable
+        expr: up{job=~"hospital-vitals-api|kafka-exporter"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Prometheus cannot scrape {{ $labels.job }}"
+          description: "The {{ $labels.job }} target has been down for over 30s."
