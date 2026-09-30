@@ -1,0 +1,15 @@
+# Minimal Alertmanager config for the demo: groups and dedupes alerts and
+# shows them in its own UI (http://localhost:9093). No notification channel
+# is wired up by default — to forward alerts to Slack/email in a real
+# deployment, add a `slack_configs` / `email_configs` block to the
+# "default" receiver below.
+
+route:
+  receiver: "default"
+  group_by: ["alertname", "severity"]
+  group_wait: 10s
+  group_interval: 30s
+  repeat_interval: 4h
+
+receivers:
+  - name: "default"
