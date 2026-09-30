@@ -1,221 +1,391 @@
 """
 Speed layer — Spark Structured Streaming processor.
 
-Reads patient vital signs from the Kafka topic `patient-vitals`,
-applies tumbling-window aggregation (30-second windows) per patient,
-and performs threshold-based anomaly detection.
+Reads bedside vital-sign events from the Kafka topic `patient-vitals` and
+runs three streaming queries off the same parsed stream:
 
-Outputs:
-  - vitals_aggregates table:  windowed avg/min/max per patient
-  - alerts table:             threshold breaches (critical vitals)
+  1. raw_archive  — appends every raw reading, untouched, to the Parquet
+                    MASTER DATASET (data/master/vitals, partitioned by
+                    event_date). This is the immutable, replayable source of
+                    truth the Lambda batch layer recomputes from.
+  2. vitals_agg   — 30 s tumbling-window avg/min/max per patient
+                    (10 s watermark) -> vitals_aggregates (real-time view).
+  3. vitals_alerts — per-reading threshold checks -> de-duplicated,
+                    escalating alerts (one open alert per patient+vital).
 
-Processing guarantees:
-  - Watermark of 10 seconds handles late-arriving data.
-  - Checkpoint directory ensures exactly-once semantics on restart.
+Why UPSERT for the aggregates:
+  Update output mode re-emits a window on every trigger while it is still
+  open (partial counts first, final counts later). A plain INSERT of the
+  second emission violates UNIQUE(patient_id, window_start), which used to
+  crash the query on its second non-empty micro-batch. Each emission now
+  overwrites the previous one (INSERT ... ON CONFLICT DO UPDATE), so the
+  dashboard sees a window within ~10 s of it opening and the final numbers
+  once it closes.
 
-Clinical thresholds for alerting:
-  Heart rate    > 120 or < 50     → WARNING / CRITICAL
-  SpO2          < 90              → CRITICAL
-  Systolic BP   > 180 or < 80    → WARNING / CRITICAL
-  Temperature   > 38.5 or < 35.0 → WARNING
+Timezones:
+  The Spark session runs in UTC and every timestamp is formatted to a UTC
+  string *inside Spark* before leaving the JVM, so neither the JVM default
+  timezone nor Python's local time can shift stored times (Postgres columns
+  are naive UTC).
+
+Delivery guarantees:
+  Kafka offsets are checkpointed per query. The DB sinks are idempotent
+  (upsert) or append-only alerts; the Parquet archive is at-least-once on
+  a replayed micro-batch, so the batch layer de-duplicates on event_id.
 """
 
 import os
-import json
+import sys
+
 from dotenv import load_dotenv
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import (
-    col,
-    from_json,
-    window,
-    avg,
-    min as spark_min,
-    max as spark_max,
-    count,
-    when,
-    lit,
-    current_timestamp,
-)
+from pyspark.sql import SparkSession, functions as F
 from pyspark.sql.types import (
     StructType,
     StructField,
     StringType,
-    FloatType,
+    DoubleType,
     BooleanType,
-    TimestampType,
 )
 
 load_dotenv()
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+from storage.db import execute_batch, get_connection  # noqa: E402
+from observability.logging_config import get_logger  # noqa: E402
+from observability.prometheus_metrics import (  # noqa: E402
+    speed_aggregates_written_total,
+    speed_alerts_written_total,
+    speed_raw_records_archived_total,
+    heartbeat,
+    push as push_metrics,
+)
+
+logger = get_logger("processing.speed_layer")
 
 # ── Configuration ──────────────────────────────────────────────────
 KAFKA_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
 VITALS_TOPIC = os.getenv("KAFKA_VITALS_TOPIC", "patient-vitals")
-CHECKPOINT_DIR = os.getenv("SPARK_CHECKPOINT_DIR", "./checkpoints")
-DATABASE_URL = os.getenv("DATABASE_URL")
+STARTING_OFFSETS = os.getenv("SPARK_STARTING_OFFSETS", "latest")
+CHECKPOINT_DIR = os.path.abspath(os.getenv("SPARK_CHECKPOINT_DIR", "./checkpoints"))
+MASTER_DATASET_DIR = os.path.abspath(os.getenv("MASTER_DATASET_DIR", "data/master/vitals"))
 
-# JDBC connection properties for PostgreSQL (Neon)
-JDBC_URL = DATABASE_URL.replace("postgresql://", "jdbc:postgresql://", 1)
-DB_PROPERTIES = {
-    "driver": "org.postgresql.Driver",
-    "ssl": "true",
-    "sslmode": "require",
-}
+WINDOW_DURATION = "30 seconds"
+WATERMARK_DELAY = "10 seconds"
+
+TS_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS"  # rendered in the session timezone (UTC)
 
 # ── Vitals event schema ───────────────────────────────────────────
 VITALS_SCHEMA = StructType([
+    StructField("event_id", StringType(), True),
     StructField("patient_id", StringType(), False),
-    StructField("heart_rate", FloatType(), False),
-    StructField("spo2", FloatType(), False),
-    StructField("systolic_bp", FloatType(), False),
-    StructField("diastolic_bp", FloatType(), False),
-    StructField("temperature", FloatType(), False),
+    StructField("heart_rate", DoubleType(), False),
+    StructField("spo2", DoubleType(), False),
+    StructField("systolic_bp", DoubleType(), False),
+    StructField("diastolic_bp", DoubleType(), False),
+    StructField("temperature", DoubleType(), False),
     StructField("timestamp", StringType(), False),
     StructField("is_abnormal", BooleanType(), True),
 ])
 
-# ── Clinical alert thresholds ─────────────────────────────────────
-THRESHOLDS = {
-    "heart_rate_high":   120.0,
-    "heart_rate_low":    50.0,
-    "spo2_low":          90.0,
-    "systolic_bp_high":  180.0,
-    "systolic_bp_low":   80.0,
-    "temperature_high":  38.5,
-    "temperature_low":   35.0,
-}
+# ── Clinical alert rules ──────────────────────────────────────────
+# (vital, direction, alert threshold, critical threshold)
+# A breach of the alert threshold is a WARNING; past the critical
+# threshold it is CRITICAL. Values mirror processing/clinical_rules.py.
+ALERT_RULES = [
+    ("heart_rate",  "above", 120.0, 150.0),
+    ("heart_rate",  "below",  50.0,  40.0),
+    ("spo2",        "below",  90.0,  90.0),   # any SpO2 < 90 % is critical
+    ("systolic_bp", "above", 180.0, 200.0),
+    ("systolic_bp", "below",  80.0,  70.0),
+    ("temperature", "above",  38.5,  39.5),
+    ("temperature", "below",  35.0,  34.5),
+]
 
 
 def create_spark_session() -> SparkSession:
-    """Build the SparkSession with Kafka + PostgreSQL JDBC packages."""
+    """Build a local SparkSession with the Kafka connector, pinned to UTC."""
     return (
         SparkSession.builder
-        .appName(os.getenv("SPARK_APP_NAME", "hospital-vitals-pipeline"))
+        .appName(os.getenv("SPARK_APP_NAME", "hospital-vitals-speed-layer"))
         .master(os.getenv("SPARK_MASTER", "local[*]"))
-        .config(
-            "spark.jars.packages",
-            "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1,"
-            "org.postgresql:postgresql:42.7.3",
-        )
-        .config("spark.sql.streaming.checkpointLocation", CHECKPOINT_DIR)
+        .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1")
         .config("spark.sql.session.timeZone", "UTC")
+        .config("spark.driver.extraJavaOptions", "-Duser.timezone=UTC")
+        .config("spark.executor.extraJavaOptions", "-Duser.timezone=UTC")
+        .config("spark.sql.shuffle.partitions", "4")  # matches Kafka partitions; default 200 is wasteful here
         .getOrCreate()
     )
 
 
 def build_vitals_stream(spark: SparkSession):
-    """
-    Read the raw vitals JSON stream from Kafka and parse it into
-    a structured DataFrame with an event-time timestamp column.
-    """
+    """Parse the raw Kafka JSON into typed columns plus an event-time column."""
     raw_stream = (
         spark.readStream
         .format("kafka")
         .option("kafka.bootstrap.servers", KAFKA_SERVERS)
         .option("subscribe", VITALS_TOPIC)
-        .option("startingOffsets", "latest")
+        .option("startingOffsets", STARTING_OFFSETS)
         .option("failOnDataLoss", "false")
         .load()
     )
 
-    parsed = (
+    return (
         raw_stream
-        .selectExpr("CAST(value AS STRING) as json_str")
-        .select(from_json(col("json_str"), VITALS_SCHEMA).alias("data"))
+        .selectExpr("CAST(value AS STRING) AS json_str")
+        .select(F.from_json("json_str", VITALS_SCHEMA).alias("data"))
         .select("data.*")
-        .withColumn("event_time", col("timestamp").cast(TimestampType()))
+        .withColumn("event_time", F.to_timestamp("timestamp"))
+        # Cleaning: drop malformed / unparseable records instead of failing.
+        .filter(F.col("patient_id").isNotNull() & F.col("event_time").isNotNull())
     )
 
-    return parsed
+
+# ── Sink 1: raw master dataset (Parquet) ──────────────────────────
+
+def write_raw_archive(batch_df, batch_id):
+    """Append the micro-batch's raw readings to the Parquet master dataset."""
+    if batch_df.isEmpty():
+        return
+    batch_df = batch_df.withColumn("event_date", F.to_date("event_time"))
+    batch_df.write.mode("append").partitionBy("event_date").parquet(MASTER_DATASET_DIR)
+    rows = batch_df.count()
+    speed_raw_records_archived_total.inc(rows)
+    heartbeat("speed_layer")
+    push_metrics("speed_layer")
+    logger.info("raw_batch_archived", batch_id=batch_id, rows=rows, path=MASTER_DATASET_DIR)
+
+
+# ── Sink 2: windowed aggregates (upsert) ──────────────────────────
+
+UPSERT_AGGREGATES_SQL = """
+    INSERT INTO vitals_aggregates
+        (patient_id, window_start, window_end, avg_heart_rate, avg_spo2,
+         avg_systolic_bp, avg_diastolic_bp, avg_temperature, min_spo2,
+         max_heart_rate, reading_count)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    ON CONFLICT (patient_id, window_start) DO UPDATE SET
+        window_end       = EXCLUDED.window_end,
+        avg_heart_rate   = EXCLUDED.avg_heart_rate,
+        avg_spo2         = EXCLUDED.avg_spo2,
+        avg_systolic_bp  = EXCLUDED.avg_systolic_bp,
+        avg_diastolic_bp = EXCLUDED.avg_diastolic_bp,
+        avg_temperature  = EXCLUDED.avg_temperature,
+        min_spo2         = EXCLUDED.min_spo2,
+        max_heart_rate   = EXCLUDED.max_heart_rate,
+        reading_count    = EXCLUDED.reading_count,
+        created_at       = (NOW() AT TIME ZONE 'UTC')
+"""
 
 
 def write_aggregates_to_db(batch_df, batch_id):
     """
-    foreachBatch sink — writes windowed aggregates to PostgreSQL.
+    foreachBatch sink — upsert the updated windows into vitals_aggregates.
 
-    Called by Spark for each micro-batch of the aggregation query.
+    The micro-batch is at most (patients x open windows) rows — a few dozen —
+    so collecting it to the driver and writing with one psycopg2 batch is
+    cheaper and simpler than a JDBC staging table.
     """
-    if batch_df.isEmpty():
-        return
-
-    (
+    rows = (
         batch_df
         .select(
-            col("patient_id"),
-            col("window.start").alias("window_start"),
-            col("window.end").alias("window_end"),
-            col("avg_heart_rate"),
-            col("avg_spo2"),
-            col("avg_systolic_bp"),
-            col("avg_diastolic_bp"),
-            col("avg_temperature"),
-            col("min_spo2"),
-            col("max_heart_rate"),
-            col("reading_count"),
+            "patient_id",
+            F.date_format("window.start", TS_FORMAT).alias("window_start"),
+            F.date_format("window.end", TS_FORMAT).alias("window_end"),
+            "avg_heart_rate", "avg_spo2", "avg_systolic_bp", "avg_diastolic_bp",
+            "avg_temperature", "min_spo2", "max_heart_rate", "reading_count",
         )
-        .write
-        .jdbc(
-            url=JDBC_URL,
-            table="vitals_aggregates",
-            mode="append",
-            properties=DB_PROPERTIES,
+        .collect()
+    )
+    if not rows:
+        return
+
+    execute_batch(UPSERT_AGGREGATES_SQL, [tuple(r) for r in rows])
+    speed_aggregates_written_total.inc(len(rows))
+    heartbeat("speed_layer")
+    push_metrics("speed_layer")
+    logger.info("aggregates_upserted", batch_id=batch_id, rows=len(rows))
+
+
+# ── Sink 3: threshold alerts ──────────────────────────────────────
+
+# Alarm management (why there is not one row per breaching reading):
+#   - de-duplication: at most ONE open alert per (patient, vital). A repeat
+#     breach within ALERT_COOLDOWN_MINUTES updates that alert (occurrences,
+#     last_seen_at, latest value) instead of inserting a new row.
+#   - escalation: a single breaching reading only raises a WARNING (it may be a
+#     motion/probe artefact). The alert becomes CRITICAL once the breach is
+#     confirmed: repeated at a critical level, or repeated ESCALATE_AFTER times.
+ALERT_COOLDOWN_MINUTES = 5
+ESCALATE_AFTER = 3
+
+UPDATE_OPEN_ALERT_SQL = f"""
+    UPDATE alerts SET
+        occurrences  = occurrences + %(n)s,
+        last_seen_at = %(ts)s,
+        vital_value  = %(value)s,
+        message      = %(message)s,
+        event_id     = %(event_id)s,
+        severity     = CASE
+            WHEN severity = 'CRITICAL' THEN 'CRITICAL'
+            WHEN %(critical_level)s AND occurrences + %(n)s >= 2 THEN 'CRITICAL'
+            WHEN occurrences + %(n)s >= {ESCALATE_AFTER} THEN 'CRITICAL'
+            ELSE 'WARNING' END
+    WHERE id = (
+        SELECT id FROM alerts
+        WHERE patient_id = %(patient_id)s AND vital_name = %(vital)s
+          AND alert_type = 'VITAL_THRESHOLD' AND acknowledged = FALSE
+          AND COALESCE(last_seen_at, triggered_at)
+              >= %(ts)s::timestamp - INTERVAL '{ALERT_COOLDOWN_MINUTES} minutes'
+        ORDER BY triggered_at DESC LIMIT 1)
+    RETURNING id
+"""
+
+INSERT_ALERT_SQL = """
+    INSERT INTO alerts
+        (patient_id, alert_type, severity, message, vital_name, vital_value,
+         threshold_value, triggered_at, last_seen_at, occurrences, acknowledged, event_id)
+    VALUES (%(patient_id)s, 'VITAL_THRESHOLD', %(severity)s, %(message)s, %(vital)s,
+            %(value)s, %(threshold)s, %(ts)s, %(ts)s, %(n)s, FALSE, %(event_id)s)
+"""
+
+
+def build_alerts(vitals):
+    """
+    One alert row per (reading, breached rule). A reading that breaches two
+    rules (e.g. high HR and low SpO2) yields two alerts rather than hiding
+    the second behind the first.
+    """
+    candidates = []
+    for vital, direction, threshold, critical in ALERT_RULES:
+        value = F.col(vital)
+        breached = value > threshold if direction == "above" else value < threshold
+        is_critical = value > critical if direction == "above" else value < critical
+        if vital == "spo2":
+            is_critical = breached
+        candidates.append(
+            F.when(
+                breached,
+                F.struct(
+                    F.lit(vital).alias("vital_name"),
+                    value.alias("vital_value"),
+                    F.lit(threshold).alias("threshold_value"),
+                    F.when(is_critical, "CRITICAL").otherwise("WARNING").alias("severity"),
+                    F.concat(
+                        F.lit(f"{vital} is {direction} threshold: value="),
+                        F.format_number(value, 1),
+                        F.lit(f", threshold={threshold:.1f}"),
+                    ).alias("message"),
+                ),
+            )
+        )
+
+    return (
+        vitals
+        .withColumn("breaches", F.filter(F.array(*candidates), lambda b: b.isNotNull()))
+        .filter(F.size("breaches") > 0)
+        .withColumn("breach", F.explode("breaches"))
+        .select(
+            "patient_id",
+            "breach.severity",
+            "breach.message",
+            "breach.vital_name",
+            "breach.vital_value",
+            "breach.threshold_value",
+            # triggered_at = when the reading was taken, not when Spark saw it
+            F.date_format("event_time", TS_FORMAT).alias("triggered_at"),
+            "event_id",
         )
     )
-    print(f"[Aggregates] Batch {batch_id}: wrote {batch_df.count()} rows")
 
 
 def write_alerts_to_db(batch_df, batch_id):
     """
-    foreachBatch sink — writes threshold-breach alerts to PostgreSQL.
+    foreachBatch sink: de-duplicate and escalate threshold breaches
+    (see the alarm-management note above), then update or open alerts.
     """
-    if batch_df.isEmpty():
+    rows = batch_df.collect()
+    if not rows:
         return
 
-    (
-        batch_df
-        .write
-        .jdbc(
-            url=JDBC_URL,
-            table="alerts",
-            mode="append",
-            properties=DB_PROPERTIES,
-        )
-    )
-    print(f"[Alerts] Batch {batch_id}: wrote {batch_df.count()} alerts")
+    # Collapse the micro-batch to one breach per (patient, vital); keep the
+    # most severe reading and count how many readings breached.
+    grouped: dict[tuple, dict] = {}
+    for r in rows:
+        key = (r["patient_id"], r["vital_name"])
+        g = grouped.setdefault(key, {"n": 0, "row": r, "critical_level": False})
+        g["n"] += 1
+        if r["severity"] == "CRITICAL":
+            g["critical_level"] = True
+            g["row"] = r
 
+    opened = updated = 0
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            for (patient_id, vital), g in grouped.items():
+                r = g["row"]
+                params = {
+                    "patient_id": patient_id, "vital": vital, "n": g["n"],
+                    "ts": r["triggered_at"], "value": r["vital_value"],
+                    "threshold": r["threshold_value"], "message": r["message"],
+                    "event_id": r["event_id"], "critical_level": g["critical_level"],
+                    # A brand-new alert is only CRITICAL if already confirmed
+                    # within this micro-batch.
+                    "severity": "CRITICAL" if (g["critical_level"] and g["n"] >= 2)
+                                or g["n"] >= ESCALATE_AFTER else "WARNING",
+                }
+                cur.execute(UPDATE_OPEN_ALERT_SQL, params)
+                if cur.fetchone():
+                    updated += 1
+                else:
+                    cur.execute(INSERT_ALERT_SQL, params)
+                    opened += 1
+                    logger.warning(
+                        "vital_alert_opened", batch_id=batch_id, event_id=r["event_id"],
+                        patient_id=patient_id, vital=vital, value=r["vital_value"],
+                        severity=params["severity"],
+                    )
+
+    speed_alerts_written_total.inc(opened)
+    heartbeat("speed_layer")
+    push_metrics("speed_layer")
+    logger.info("alerts_processed", batch_id=batch_id, breaches=len(rows),
+                alerts_opened=opened, alerts_updated=updated)
+
+
+# ── Entry point ───────────────────────────────────────────────────
 
 def run_stream_processor():
-    """
-    Main entry point — starts two streaming queries:
-      1. Windowed aggregation (30 s tumbling window, 10 s watermark)
-      2. Per-reading threshold alerting
-    """
     spark = create_spark_session()
     spark.sparkContext.setLogLevel("WARN")
-
     vitals = build_vitals_stream(spark)
 
-    # ── Query 1: Windowed aggregation ──────────────────────────────
-    aggregated = (
-        vitals
-        .withWatermark("event_time", "10 seconds")
-        .groupBy(
-            col("patient_id"),
-            window(col("event_time"), "30 seconds"),
-        )
-        .agg(
-            avg("heart_rate").alias("avg_heart_rate"),
-            avg("spo2").alias("avg_spo2"),
-            avg("systolic_bp").alias("avg_systolic_bp"),
-            avg("diastolic_bp").alias("avg_diastolic_bp"),
-            avg("temperature").alias("avg_temperature"),
-            spark_min("spo2").alias("min_spo2"),
-            spark_max("heart_rate").alias("max_heart_rate"),
-            count("*").alias("reading_count"),
-        )
+    raw_query = (
+        vitals.writeStream
+        .queryName("raw_archive")
+        .foreachBatch(write_raw_archive)
+        .option("checkpointLocation", f"{CHECKPOINT_DIR}/raw_archive")
+        .trigger(processingTime="30 seconds")
+        .start()
     )
 
+    aggregated = (
+        vitals
+        .withWatermark("event_time", WATERMARK_DELAY)
+        .groupBy("patient_id", F.window("event_time", WINDOW_DURATION))
+        .agg(
+            F.avg("heart_rate").alias("avg_heart_rate"),
+            F.avg("spo2").alias("avg_spo2"),
+            F.avg("systolic_bp").alias("avg_systolic_bp"),
+            F.avg("diastolic_bp").alias("avg_diastolic_bp"),
+            F.avg("temperature").alias("avg_temperature"),
+            F.min("spo2").alias("min_spo2"),
+            F.max("heart_rate").alias("max_heart_rate"),
+            F.count("*").alias("reading_count"),
+        )
+    )
     agg_query = (
         aggregated.writeStream
+        .queryName("vitals_agg")
         .outputMode("update")
         .foreachBatch(write_aggregates_to_db)
         .option("checkpointLocation", f"{CHECKPOINT_DIR}/vitals_agg")
@@ -223,120 +393,9 @@ def run_stream_processor():
         .start()
     )
 
-    # ── Query 2: Threshold-based alerting ──────────────────────────
-    alerts = (
-        vitals
-        .filter(
-            (col("heart_rate") > THRESHOLDS["heart_rate_high"])
-            | (col("heart_rate") < THRESHOLDS["heart_rate_low"])
-            | (col("spo2") < THRESHOLDS["spo2_low"])
-            | (col("systolic_bp") > THRESHOLDS["systolic_bp_high"])
-            | (col("systolic_bp") < THRESHOLDS["systolic_bp_low"])
-            | (col("temperature") > THRESHOLDS["temperature_high"])
-            | (col("temperature") < THRESHOLDS["temperature_low"])
-        )
-        .select(
-            col("patient_id"),
-            # Determine which vital triggered and its severity
-            when(
-                (col("heart_rate") > THRESHOLDS["heart_rate_high"])
-                | (col("heart_rate") < THRESHOLDS["heart_rate_low"]),
-                lit("VITAL_THRESHOLD"),
-            )
-            .when(col("spo2") < THRESHOLDS["spo2_low"], lit("VITAL_THRESHOLD"))
-            .when(
-                (col("systolic_bp") > THRESHOLDS["systolic_bp_high"])
-                | (col("systolic_bp") < THRESHOLDS["systolic_bp_low"]),
-                lit("VITAL_THRESHOLD"),
-            )
-            .when(
-                (col("temperature") > THRESHOLDS["temperature_high"])
-                | (col("temperature") < THRESHOLDS["temperature_low"]),
-                lit("VITAL_THRESHOLD"),
-            )
-            .alias("alert_type"),
-            # Severity: SpO2 < 90 or HR extremes are CRITICAL, rest WARNING
-            when(
-                (col("spo2") < THRESHOLDS["spo2_low"])
-                | (col("heart_rate") > 150)
-                | (col("heart_rate") < 40),
-                lit("CRITICAL"),
-            )
-            .otherwise(lit("WARNING"))
-            .alias("severity"),
-            # Build a human-readable message
-            when(
-                col("heart_rate") > THRESHOLDS["heart_rate_high"],
-                concat_alert_msg("heart_rate", col("heart_rate"), lit(THRESHOLDS["heart_rate_high"]), lit("above")),
-            )
-            .when(
-                col("heart_rate") < THRESHOLDS["heart_rate_low"],
-                concat_alert_msg("heart_rate", col("heart_rate"), lit(THRESHOLDS["heart_rate_low"]), lit("below")),
-            )
-            .when(
-                col("spo2") < THRESHOLDS["spo2_low"],
-                concat_alert_msg("spo2", col("spo2"), lit(THRESHOLDS["spo2_low"]), lit("below")),
-            )
-            .when(
-                col("systolic_bp") > THRESHOLDS["systolic_bp_high"],
-                concat_alert_msg("systolic_bp", col("systolic_bp"), lit(THRESHOLDS["systolic_bp_high"]), lit("above")),
-            )
-            .when(
-                col("systolic_bp") < THRESHOLDS["systolic_bp_low"],
-                concat_alert_msg("systolic_bp", col("systolic_bp"), lit(THRESHOLDS["systolic_bp_low"]), lit("below")),
-            )
-            .when(
-                col("temperature") > THRESHOLDS["temperature_high"],
-                concat_alert_msg("temperature", col("temperature"), lit(THRESHOLDS["temperature_high"]), lit("above")),
-            )
-            .when(
-                col("temperature") < THRESHOLDS["temperature_low"],
-                concat_alert_msg("temperature", col("temperature"), lit(THRESHOLDS["temperature_low"]), lit("below")),
-            )
-            .otherwise(lit("Vital sign threshold breach detected"))
-            .alias("message"),
-            # Record which vital and its value
-            when(
-                (col("heart_rate") > THRESHOLDS["heart_rate_high"])
-                | (col("heart_rate") < THRESHOLDS["heart_rate_low"]),
-                lit("heart_rate"),
-            )
-            .when(col("spo2") < THRESHOLDS["spo2_low"], lit("spo2"))
-            .when(
-                (col("systolic_bp") > THRESHOLDS["systolic_bp_high"])
-                | (col("systolic_bp") < THRESHOLDS["systolic_bp_low"]),
-                lit("systolic_bp"),
-            )
-            .when(
-                (col("temperature") > THRESHOLDS["temperature_high"])
-                | (col("temperature") < THRESHOLDS["temperature_low"]),
-                lit("temperature"),
-            )
-            .alias("vital_name"),
-            when(
-                (col("heart_rate") > THRESHOLDS["heart_rate_high"])
-                | (col("heart_rate") < THRESHOLDS["heart_rate_low"]),
-                col("heart_rate"),
-            )
-            .when(col("spo2") < THRESHOLDS["spo2_low"], col("spo2"))
-            .when(
-                (col("systolic_bp") > THRESHOLDS["systolic_bp_high"])
-                | (col("systolic_bp") < THRESHOLDS["systolic_bp_low"]),
-                col("systolic_bp"),
-            )
-            .when(
-                (col("temperature") > THRESHOLDS["temperature_high"])
-                | (col("temperature") < THRESHOLDS["temperature_low"]),
-                col("temperature"),
-            )
-            .alias("vital_value"),
-            current_timestamp().alias("triggered_at"),
-            lit(False).alias("acknowledged"),
-        )
-    )
-
     alert_query = (
-        alerts.writeStream
+        build_alerts(vitals).writeStream
+        .queryName("vitals_alerts")
         .outputMode("append")
         .foreachBatch(write_alerts_to_db)
         .option("checkpointLocation", f"{CHECKPOINT_DIR}/vitals_alerts")
@@ -344,33 +403,27 @@ def run_stream_processor():
         .start()
     )
 
-    print("Stream processor started. Waiting for data...")
-    print("  - Aggregation query: 30s windows, written every 10s")
-    print("  - Alert query: threshold checks, written every 5s")
-    print("Press Ctrl+C to stop.")
+    logger.info(
+        "stream_processor_started",
+        topic=VITALS_TOPIC,
+        master_dataset=MASTER_DATASET_DIR,
+        window=WINDOW_DURATION,
+        watermark=WATERMARK_DELAY,
+    )
+    print("Stream processor started (raw archive 30s, aggregates 10s, alerts 5s). Ctrl+C to stop.")
 
     try:
         spark.streams.awaitAnyTermination()
     except KeyboardInterrupt:
         print("\nStopping stream processor...")
-        agg_query.stop()
-        alert_query.stop()
+    finally:
+        for q in (raw_query, agg_query, alert_query):
+            if q.isActive:
+                q.stop()
+            if q.exception():
+                logger.error("streaming_query_failed", query=q.name, error=str(q.exception()))
         spark.stop()
-        print("Stream processor stopped.")
-
-
-def concat_alert_msg(vital_name: str, value_col, threshold_col, direction_col):
-    """Build a formatted alert message string using Spark concat."""
-    from pyspark.sql.functions import concat, lit, format_number
-
-    return concat(
-        lit(f"{vital_name} is "),
-        direction_col,
-        lit(" threshold: value="),
-        format_number(value_col, 1),
-        lit(", threshold="),
-        format_number(threshold_col, 1),
-    )
+        logger.info("stream_processor_stopped")
 
 
 if __name__ == "__main__":
