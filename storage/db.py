@@ -1,5 +1,6 @@
 """
-Database connection pool and helper utilities for Neon PostgreSQL.
+Database connection pool and helper utilities for PostgreSQL
+(the `postgres` service in docker-compose.yml).
 
 Uses psycopg2 with connection pooling. All queries go through
 get_connection() as a context manager to ensure connections are
@@ -28,7 +29,7 @@ def _get_pool() -> pool.ThreadedConnectionPool:
         database_url = os.getenv("DATABASE_URL")
         if not database_url:
             raise RuntimeError(
-                "DATABASE_URL not set. Add your Neon connection string to .env"
+                "DATABASE_URL not set. Copy .env.example to .env"
             )
         _connection_pool = pool.ThreadedConnectionPool(
             minconn=2,
@@ -88,7 +89,7 @@ def execute_batch(query: str, params_list: list[tuple]) -> int:
 
 
 def init_schema(sql_file_path: str = "storage/init.sql"):
-    """Run the schema initialization script against Neon."""
+    """Run the schema initialization script (docker-compose applies it automatically on first boot)."""
     with open(sql_file_path, "r") as f:
         sql = f.read()
     with get_connection() as conn:

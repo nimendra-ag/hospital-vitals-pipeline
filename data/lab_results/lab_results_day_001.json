@@ -1,602 +1,638 @@
 [
   {
+    "report_id": "LAB-D001-P001",
     "patient_id": "P001",
-    "test_type": "WBC",
-    "result_value": 3.4,
-    "reference_min": 4.0,
-    "reference_max": 11.0,
-    "is_abnormal": true,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
+    "simulated_day": 1,
+    "collected_at": "2026-09-30T15:53:10.210737+00:00",
+    "tests": [
+      {
+        "test_type": "WBC",
+        "result_value": 6.5,
+        "unit": "10^3/uL",
+        "reference_min": 4.0,
+        "reference_max": 11.0,
+        "reference_range": "4.0-11.0",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Hemoglobin",
+        "result_value": 25.61,
+        "unit": "g/dL",
+        "reference_min": 12.0,
+        "reference_max": 17.5,
+        "reference_range": "12.0-17.5",
+        "is_abnormal": true
+      },
+      {
+        "test_type": "Glucose",
+        "result_value": 86.06,
+        "unit": "mg/dL",
+        "reference_min": 70,
+        "reference_max": 100,
+        "reference_range": "70-100",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Creatinine",
+        "result_value": 0.75,
+        "unit": "mg/dL",
+        "reference_min": 0.6,
+        "reference_max": 1.2,
+        "reference_range": "0.6-1.2",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "CRP",
+        "result_value": 2.74,
+        "unit": "mg/L",
+        "reference_min": 0.0,
+        "reference_max": 5.0,
+        "reference_range": "0.0-5.0",
+        "is_abnormal": false
+      }
+    ]
   },
   {
-    "patient_id": "P001",
-    "test_type": "Hemoglobin",
-    "result_value": 10.84,
-    "reference_min": 12.0,
-    "reference_max": 17.5,
-    "is_abnormal": true,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P001",
-    "test_type": "Glucose",
-    "result_value": 88.31,
-    "reference_min": 70,
-    "reference_max": 100,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P001",
-    "test_type": "Creatinine",
-    "result_value": 1.22,
-    "reference_min": 0.6,
-    "reference_max": 1.2,
-    "is_abnormal": true,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P001",
-    "test_type": "CRP",
-    "result_value": 0.0,
-    "reference_min": 0.0,
-    "reference_max": 5.0,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
+    "report_id": "LAB-D001-P002",
     "patient_id": "P002",
-    "test_type": "WBC",
-    "result_value": 6.69,
-    "reference_min": 4.0,
-    "reference_max": 11.0,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
+    "simulated_day": 1,
+    "collected_at": "2026-09-30T15:53:10.210737+00:00",
+    "tests": [
+      {
+        "test_type": "WBC",
+        "result_value": 6.54,
+        "unit": "10^3/uL",
+        "reference_min": 4.0,
+        "reference_max": 11.0,
+        "reference_range": "4.0-11.0",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Hemoglobin",
+        "result_value": 14.28,
+        "unit": "g/dL",
+        "reference_min": 12.0,
+        "reference_max": 17.5,
+        "reference_range": "12.0-17.5",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Glucose",
+        "result_value": 88.98,
+        "unit": "mg/dL",
+        "reference_min": 70,
+        "reference_max": 100,
+        "reference_range": "70-100",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Creatinine",
+        "result_value": 1.2,
+        "unit": "mg/dL",
+        "reference_min": 0.6,
+        "reference_max": 1.2,
+        "reference_range": "0.6-1.2",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "CRP",
+        "result_value": 1.29,
+        "unit": "mg/L",
+        "reference_min": 0.0,
+        "reference_max": 5.0,
+        "reference_range": "0.0-5.0",
+        "is_abnormal": false
+      }
+    ]
   },
   {
-    "patient_id": "P002",
-    "test_type": "Hemoglobin",
-    "result_value": 9.86,
-    "reference_min": 12.0,
-    "reference_max": 17.5,
-    "is_abnormal": true,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P002",
-    "test_type": "Glucose",
-    "result_value": 85.9,
-    "reference_min": 70,
-    "reference_max": 100,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P002",
-    "test_type": "Creatinine",
-    "result_value": 0.58,
-    "reference_min": 0.6,
-    "reference_max": 1.2,
-    "is_abnormal": true,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P002",
-    "test_type": "CRP",
-    "result_value": 1.14,
-    "reference_min": 0.0,
-    "reference_max": 5.0,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
+    "report_id": "LAB-D001-P003",
     "patient_id": "P003",
-    "test_type": "WBC",
-    "result_value": 7.23,
-    "reference_min": 4.0,
-    "reference_max": 11.0,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
+    "simulated_day": 1,
+    "collected_at": "2026-09-30T15:53:10.210737+00:00",
+    "tests": [
+      {
+        "test_type": "WBC",
+        "result_value": 7.07,
+        "unit": "10^3/uL",
+        "reference_min": 4.0,
+        "reference_max": 11.0,
+        "reference_range": "4.0-11.0",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Hemoglobin",
+        "result_value": 16.81,
+        "unit": "g/dL",
+        "reference_min": 12.0,
+        "reference_max": 17.5,
+        "reference_range": "12.0-17.5",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Glucose",
+        "result_value": 95.78,
+        "unit": "mg/dL",
+        "reference_min": 70,
+        "reference_max": 100,
+        "reference_range": "70-100",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Creatinine",
+        "result_value": 0.96,
+        "unit": "mg/dL",
+        "reference_min": 0.6,
+        "reference_max": 1.2,
+        "reference_range": "0.6-1.2",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "CRP",
+        "result_value": 2.79,
+        "unit": "mg/L",
+        "reference_min": 0.0,
+        "reference_max": 5.0,
+        "reference_range": "0.0-5.0",
+        "is_abnormal": false
+      }
+    ]
   },
   {
-    "patient_id": "P003",
-    "test_type": "Hemoglobin",
-    "result_value": 15.52,
-    "reference_min": 12.0,
-    "reference_max": 17.5,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P003",
-    "test_type": "Glucose",
-    "result_value": 76.75,
-    "reference_min": 70,
-    "reference_max": 100,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P003",
-    "test_type": "Creatinine",
-    "result_value": 1.49,
-    "reference_min": 0.6,
-    "reference_max": 1.2,
-    "is_abnormal": true,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P003",
-    "test_type": "CRP",
-    "result_value": 5.79,
-    "reference_min": 0.0,
-    "reference_max": 5.0,
-    "is_abnormal": true,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
+    "report_id": "LAB-D001-P004",
     "patient_id": "P004",
-    "test_type": "WBC",
-    "result_value": 6.08,
-    "reference_min": 4.0,
-    "reference_max": 11.0,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
+    "simulated_day": 1,
+    "collected_at": "2026-09-30T15:53:10.210737+00:00",
+    "tests": [
+      {
+        "test_type": "WBC",
+        "result_value": 9.86,
+        "unit": "10^3/uL",
+        "reference_min": 4.0,
+        "reference_max": 11.0,
+        "reference_range": "4.0-11.0",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Hemoglobin",
+        "result_value": 15.23,
+        "unit": "g/dL",
+        "reference_min": 12.0,
+        "reference_max": 17.5,
+        "reference_range": "12.0-17.5",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Glucose",
+        "result_value": 83.76,
+        "unit": "mg/dL",
+        "reference_min": 70,
+        "reference_max": 100,
+        "reference_range": "70-100",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Creatinine",
+        "result_value": 0.9,
+        "unit": "mg/dL",
+        "reference_min": 0.6,
+        "reference_max": 1.2,
+        "reference_range": "0.6-1.2",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "CRP",
+        "result_value": 5.59,
+        "unit": "mg/L",
+        "reference_min": 0.0,
+        "reference_max": 5.0,
+        "reference_range": "0.0-5.0",
+        "is_abnormal": true
+      }
+    ]
   },
   {
-    "patient_id": "P004",
-    "test_type": "Hemoglobin",
-    "result_value": 14.05,
-    "reference_min": 12.0,
-    "reference_max": 17.5,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P004",
-    "test_type": "Glucose",
-    "result_value": 84.14,
-    "reference_min": 70,
-    "reference_max": 100,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P004",
-    "test_type": "Creatinine",
-    "result_value": 0.6,
-    "reference_min": 0.6,
-    "reference_max": 1.2,
-    "is_abnormal": true,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P004",
-    "test_type": "CRP",
-    "result_value": 3.89,
-    "reference_min": 0.0,
-    "reference_max": 5.0,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
+    "report_id": "LAB-D001-P005",
     "patient_id": "P005",
-    "test_type": "WBC",
-    "result_value": 5.8,
-    "reference_min": 4.0,
-    "reference_max": 11.0,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
+    "simulated_day": 1,
+    "collected_at": "2026-09-30T15:53:10.210737+00:00",
+    "tests": [
+      {
+        "test_type": "WBC",
+        "result_value": 4.94,
+        "unit": "10^3/uL",
+        "reference_min": 4.0,
+        "reference_max": 11.0,
+        "reference_range": "4.0-11.0",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Hemoglobin",
+        "result_value": 14.59,
+        "unit": "g/dL",
+        "reference_min": 12.0,
+        "reference_max": 17.5,
+        "reference_range": "12.0-17.5",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Glucose",
+        "result_value": 86.58,
+        "unit": "mg/dL",
+        "reference_min": 70,
+        "reference_max": 100,
+        "reference_range": "70-100",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Creatinine",
+        "result_value": 0.75,
+        "unit": "mg/dL",
+        "reference_min": 0.6,
+        "reference_max": 1.2,
+        "reference_range": "0.6-1.2",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "CRP",
+        "result_value": 6.09,
+        "unit": "mg/L",
+        "reference_min": 0.0,
+        "reference_max": 5.0,
+        "reference_range": "0.0-5.0",
+        "is_abnormal": true
+      }
+    ]
   },
   {
-    "patient_id": "P005",
-    "test_type": "Hemoglobin",
-    "result_value": 9.64,
-    "reference_min": 12.0,
-    "reference_max": 17.5,
-    "is_abnormal": true,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P005",
-    "test_type": "Glucose",
-    "result_value": 81.34,
-    "reference_min": 70,
-    "reference_max": 100,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P005",
-    "test_type": "Creatinine",
-    "result_value": 0.85,
-    "reference_min": 0.6,
-    "reference_max": 1.2,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P005",
-    "test_type": "CRP",
-    "result_value": 5.71,
-    "reference_min": 0.0,
-    "reference_max": 5.0,
-    "is_abnormal": true,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
+    "report_id": "LAB-D001-P006",
     "patient_id": "P006",
-    "test_type": "WBC",
-    "result_value": 6.59,
-    "reference_min": 4.0,
-    "reference_max": 11.0,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
+    "simulated_day": 1,
+    "collected_at": "2026-09-30T15:53:10.210737+00:00",
+    "tests": [
+      {
+        "test_type": "WBC",
+        "result_value": 5.35,
+        "unit": "10^3/uL",
+        "reference_min": 4.0,
+        "reference_max": 11.0,
+        "reference_range": "4.0-11.0",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Hemoglobin",
+        "result_value": 16.29,
+        "unit": "g/dL",
+        "reference_min": 12.0,
+        "reference_max": 17.5,
+        "reference_range": "12.0-17.5",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Glucose",
+        "result_value": 110.75,
+        "unit": "mg/dL",
+        "reference_min": 70,
+        "reference_max": 100,
+        "reference_range": "70-100",
+        "is_abnormal": true
+      },
+      {
+        "test_type": "Creatinine",
+        "result_value": 0.63,
+        "unit": "mg/dL",
+        "reference_min": 0.6,
+        "reference_max": 1.2,
+        "reference_range": "0.6-1.2",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "CRP",
+        "result_value": 2.1,
+        "unit": "mg/L",
+        "reference_min": 0.0,
+        "reference_max": 5.0,
+        "reference_range": "0.0-5.0",
+        "is_abnormal": false
+      }
+    ]
   },
   {
-    "patient_id": "P006",
-    "test_type": "Hemoglobin",
-    "result_value": 13.14,
-    "reference_min": 12.0,
-    "reference_max": 17.5,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P006",
-    "test_type": "Glucose",
-    "result_value": 95.95,
-    "reference_min": 70,
-    "reference_max": 100,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P006",
-    "test_type": "Creatinine",
-    "result_value": 0.77,
-    "reference_min": 0.6,
-    "reference_max": 1.2,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P006",
-    "test_type": "CRP",
-    "result_value": 4.78,
-    "reference_min": 0.0,
-    "reference_max": 5.0,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
+    "report_id": "LAB-D001-P007",
     "patient_id": "P007",
-    "test_type": "WBC",
-    "result_value": 12.97,
-    "reference_min": 4.0,
-    "reference_max": 11.0,
-    "is_abnormal": true,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
+    "simulated_day": 1,
+    "collected_at": "2026-09-30T15:53:10.210737+00:00",
+    "tests": [
+      {
+        "test_type": "WBC",
+        "result_value": 6.69,
+        "unit": "10^3/uL",
+        "reference_min": 4.0,
+        "reference_max": 11.0,
+        "reference_range": "4.0-11.0",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Hemoglobin",
+        "result_value": 13.88,
+        "unit": "g/dL",
+        "reference_min": 12.0,
+        "reference_max": 17.5,
+        "reference_range": "12.0-17.5",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Glucose",
+        "result_value": 85.73,
+        "unit": "mg/dL",
+        "reference_min": 70,
+        "reference_max": 100,
+        "reference_range": "70-100",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Creatinine",
+        "result_value": 0.94,
+        "unit": "mg/dL",
+        "reference_min": 0.6,
+        "reference_max": 1.2,
+        "reference_range": "0.6-1.2",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "CRP",
+        "result_value": 6.57,
+        "unit": "mg/L",
+        "reference_min": 0.0,
+        "reference_max": 5.0,
+        "reference_range": "0.0-5.0",
+        "is_abnormal": true
+      }
+    ]
   },
   {
-    "patient_id": "P007",
-    "test_type": "Hemoglobin",
-    "result_value": 14.38,
-    "reference_min": 12.0,
-    "reference_max": 17.5,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P007",
-    "test_type": "Glucose",
-    "result_value": 82.05,
-    "reference_min": 70,
-    "reference_max": 100,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P007",
-    "test_type": "Creatinine",
-    "result_value": 1.49,
-    "reference_min": 0.6,
-    "reference_max": 1.2,
-    "is_abnormal": true,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P007",
-    "test_type": "CRP",
-    "result_value": 1.94,
-    "reference_min": 0.0,
-    "reference_max": 5.0,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
+    "report_id": "LAB-D001-P008",
     "patient_id": "P008",
-    "test_type": "WBC",
-    "result_value": 8.08,
-    "reference_min": 4.0,
-    "reference_max": 11.0,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
+    "simulated_day": 1,
+    "collected_at": "2026-09-30T15:53:10.210737+00:00",
+    "tests": [
+      {
+        "test_type": "WBC",
+        "result_value": 4.89,
+        "unit": "10^3/uL",
+        "reference_min": 4.0,
+        "reference_max": 11.0,
+        "reference_range": "4.0-11.0",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Hemoglobin",
+        "result_value": 14.5,
+        "unit": "g/dL",
+        "reference_min": 12.0,
+        "reference_max": 17.5,
+        "reference_range": "12.0-17.5",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Glucose",
+        "result_value": 49.33,
+        "unit": "mg/dL",
+        "reference_min": 70,
+        "reference_max": 100,
+        "reference_range": "70-100",
+        "is_abnormal": true
+      },
+      {
+        "test_type": "Creatinine",
+        "result_value": 1.06,
+        "unit": "mg/dL",
+        "reference_min": 0.6,
+        "reference_max": 1.2,
+        "reference_range": "0.6-1.2",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "CRP",
+        "result_value": 4.72,
+        "unit": "mg/L",
+        "reference_min": 0.0,
+        "reference_max": 5.0,
+        "reference_range": "0.0-5.0",
+        "is_abnormal": false
+      }
+    ]
   },
   {
-    "patient_id": "P008",
-    "test_type": "Hemoglobin",
-    "result_value": 15.77,
-    "reference_min": 12.0,
-    "reference_max": 17.5,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P008",
-    "test_type": "Glucose",
-    "result_value": 78.31,
-    "reference_min": 70,
-    "reference_max": 100,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P008",
-    "test_type": "Creatinine",
-    "result_value": 0.65,
-    "reference_min": 0.6,
-    "reference_max": 1.2,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P008",
-    "test_type": "CRP",
-    "result_value": 2.51,
-    "reference_min": 0.0,
-    "reference_max": 5.0,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
+    "report_id": "LAB-D001-P009",
     "patient_id": "P009",
-    "test_type": "WBC",
-    "result_value": 3.4,
-    "reference_min": 4.0,
-    "reference_max": 11.0,
-    "is_abnormal": true,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
+    "simulated_day": 1,
+    "collected_at": "2026-09-30T15:53:10.210737+00:00",
+    "tests": [
+      {
+        "test_type": "WBC",
+        "result_value": 3.05,
+        "unit": "10^3/uL",
+        "reference_min": 4.0,
+        "reference_max": 11.0,
+        "reference_range": "4.0-11.0",
+        "is_abnormal": true
+      },
+      {
+        "test_type": "Hemoglobin",
+        "result_value": 14.76,
+        "unit": "g/dL",
+        "reference_min": 12.0,
+        "reference_max": 17.5,
+        "reference_range": "12.0-17.5",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Glucose",
+        "result_value": 89.95,
+        "unit": "mg/dL",
+        "reference_min": 70,
+        "reference_max": 100,
+        "reference_range": "70-100",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Creatinine",
+        "result_value": 0.6,
+        "unit": "mg/dL",
+        "reference_min": 0.6,
+        "reference_max": 1.2,
+        "reference_range": "0.6-1.2",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "CRP",
+        "result_value": 7.57,
+        "unit": "mg/L",
+        "reference_min": 0.0,
+        "reference_max": 5.0,
+        "reference_range": "0.0-5.0",
+        "is_abnormal": true
+      }
+    ]
   },
   {
-    "patient_id": "P009",
-    "test_type": "Hemoglobin",
-    "result_value": 16.13,
-    "reference_min": 12.0,
-    "reference_max": 17.5,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P009",
-    "test_type": "Glucose",
-    "result_value": 83.06,
-    "reference_min": 70,
-    "reference_max": 100,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P009",
-    "test_type": "Creatinine",
-    "result_value": 0.29,
-    "reference_min": 0.6,
-    "reference_max": 1.2,
-    "is_abnormal": true,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P009",
-    "test_type": "CRP",
-    "result_value": 3.24,
-    "reference_min": 0.0,
-    "reference_max": 5.0,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
+    "report_id": "LAB-D001-P010",
     "patient_id": "P010",
-    "test_type": "WBC",
-    "result_value": 8.55,
-    "reference_min": 4.0,
-    "reference_max": 11.0,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
+    "simulated_day": 1,
+    "collected_at": "2026-09-30T15:53:10.210737+00:00",
+    "tests": [
+      {
+        "test_type": "WBC",
+        "result_value": 7.16,
+        "unit": "10^3/uL",
+        "reference_min": 4.0,
+        "reference_max": 11.0,
+        "reference_range": "4.0-11.0",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Hemoglobin",
+        "result_value": 15.7,
+        "unit": "g/dL",
+        "reference_min": 12.0,
+        "reference_max": 17.5,
+        "reference_range": "12.0-17.5",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Glucose",
+        "result_value": 70,
+        "unit": "mg/dL",
+        "reference_min": 70,
+        "reference_max": 100,
+        "reference_range": "70-100",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Creatinine",
+        "result_value": 0.92,
+        "unit": "mg/dL",
+        "reference_min": 0.6,
+        "reference_max": 1.2,
+        "reference_range": "0.6-1.2",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "CRP",
+        "result_value": 1.0,
+        "unit": "mg/L",
+        "reference_min": 0.0,
+        "reference_max": 5.0,
+        "reference_range": "0.0-5.0",
+        "is_abnormal": false
+      }
+    ]
   },
   {
-    "patient_id": "P010",
-    "test_type": "Hemoglobin",
-    "result_value": 13.06,
-    "reference_min": 12.0,
-    "reference_max": 17.5,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P010",
-    "test_type": "Glucose",
-    "result_value": 88.9,
-    "reference_min": 70,
-    "reference_max": 100,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P010",
-    "test_type": "Creatinine",
-    "result_value": 0.77,
-    "reference_min": 0.6,
-    "reference_max": 1.2,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P010",
-    "test_type": "CRP",
-    "result_value": 0.6,
-    "reference_min": 0.0,
-    "reference_max": 5.0,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
+    "report_id": "LAB-D001-P011",
     "patient_id": "P011",
-    "test_type": "WBC",
-    "result_value": 8.69,
-    "reference_min": 4.0,
-    "reference_max": 11.0,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
+    "simulated_day": 1,
+    "collected_at": "2026-09-30T15:53:10.210737+00:00",
+    "tests": [
+      {
+        "test_type": "WBC",
+        "result_value": 9.2,
+        "unit": "10^3/uL",
+        "reference_min": 4.0,
+        "reference_max": 11.0,
+        "reference_range": "4.0-11.0",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Hemoglobin",
+        "result_value": 12.5,
+        "unit": "g/dL",
+        "reference_min": 12.0,
+        "reference_max": 17.5,
+        "reference_range": "12.0-17.5",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Glucose",
+        "result_value": 74.89,
+        "unit": "mg/dL",
+        "reference_min": 70,
+        "reference_max": 100,
+        "reference_range": "70-100",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Creatinine",
+        "result_value": 0.65,
+        "unit": "mg/dL",
+        "reference_min": 0.6,
+        "reference_max": 1.2,
+        "reference_range": "0.6-1.2",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "CRP",
+        "result_value": 0.01,
+        "unit": "mg/L",
+        "reference_min": 0.0,
+        "reference_max": 5.0,
+        "reference_range": "0.0-5.0",
+        "is_abnormal": false
+      }
+    ]
   },
   {
-    "patient_id": "P011",
-    "test_type": "Hemoglobin",
-    "result_value": 15.9,
-    "reference_min": 12.0,
-    "reference_max": 17.5,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P011",
-    "test_type": "Glucose",
-    "result_value": 81.04,
-    "reference_min": 70,
-    "reference_max": 100,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P011",
-    "test_type": "Creatinine",
-    "result_value": 0.87,
-    "reference_min": 0.6,
-    "reference_max": 1.2,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P011",
-    "test_type": "CRP",
-    "result_value": 0.0,
-    "reference_min": 0.0,
-    "reference_max": 5.0,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
+    "report_id": "LAB-D001-P012",
     "patient_id": "P012",
-    "test_type": "WBC",
-    "result_value": 12.43,
-    "reference_min": 4.0,
-    "reference_max": 11.0,
-    "is_abnormal": true,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P012",
-    "test_type": "Hemoglobin",
-    "result_value": 15.32,
-    "reference_min": 12.0,
-    "reference_max": 17.5,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P012",
-    "test_type": "Glucose",
-    "result_value": 84.77,
-    "reference_min": 70,
-    "reference_max": 100,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P012",
-    "test_type": "Creatinine",
-    "result_value": 0.92,
-    "reference_min": 0.6,
-    "reference_max": 1.2,
-    "is_abnormal": false,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
-  },
-  {
-    "patient_id": "P012",
-    "test_type": "CRP",
-    "result_value": 5.9,
-    "reference_min": 0.0,
-    "reference_max": 5.0,
-    "is_abnormal": true,
-    "collected_at": "2026-09-27T20:10:43.054493+00:00",
-    "simulated_day": 1
+    "simulated_day": 1,
+    "collected_at": "2026-09-30T15:53:10.210737+00:00",
+    "tests": [
+      {
+        "test_type": "WBC",
+        "result_value": 4.76,
+        "unit": "10^3/uL",
+        "reference_min": 4.0,
+        "reference_max": 11.0,
+        "reference_range": "4.0-11.0",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Hemoglobin",
+        "result_value": 23.72,
+        "unit": "g/dL",
+        "reference_min": 12.0,
+        "reference_max": 17.5,
+        "reference_range": "12.0-17.5",
+        "is_abnormal": true
+      },
+      {
+        "test_type": "Glucose",
+        "result_value": 87.32,
+        "unit": "mg/dL",
+        "reference_min": 70,
+        "reference_max": 100,
+        "reference_range": "70-100",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "Creatinine",
+        "result_value": 0.7,
+        "unit": "mg/dL",
+        "reference_min": 0.6,
+        "reference_max": 1.2,
+        "reference_range": "0.6-1.2",
+        "is_abnormal": false
+      },
+      {
+        "test_type": "CRP",
+        "result_value": 4.03,
+        "unit": "mg/L",
+        "reference_min": 0.0,
+        "reference_max": 5.0,
+        "reference_range": "0.0-5.0",
+        "is_abnormal": false
+      }
+    ]
   }
 ]

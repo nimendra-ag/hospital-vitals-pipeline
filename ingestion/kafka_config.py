@@ -6,7 +6,10 @@ before any producer or consumer starts. Partitioning strategy:
   - patient-vitals:  partitioned by patient_id so that all readings
                      for a single patient land on the same partition,
                      enabling per-patient stateful stream processing.
-  - lab-results:     single partition (low volume, once per day).
+
+The daily lab feed deliberately does NOT go through Kafka: it is a
+once-a-day file drop consumed by the Airflow batch layer (see README,
+"Architecture decision"), so no lab topic is created.
 """
 
 import os
@@ -51,7 +54,6 @@ def create_topics():
     existing = set(admin.list_topics(timeout=10).topics.keys())
 
     vitals_topic = os.getenv("KAFKA_VITALS_TOPIC", "patient-vitals")
-    lab_topic = os.getenv("KAFKA_LAB_TOPIC", "lab-results")
     num_partitions = int(os.getenv("KAFKA_NUM_PARTITIONS", "4"))
 
     topics_to_create = []
@@ -69,21 +71,8 @@ def create_topics():
             )
         )
 
-    if lab_topic not in existing:
-        topics_to_create.append(
-            NewTopic(
-                topic=lab_topic,
-                num_partitions=1,  # low volume — one partition is enough
-                replication_factor=1,
-                config={
-                    "retention.ms": str(7 * 24 * 60 * 60 * 1000),  # 7 days
-                    "cleanup.policy": "delete",
-                },
-            )
-        )
-
     if not topics_to_create:
-        logger.info("topics_already_exist", topics=[vitals_topic, lab_topic])
+        logger.info("topics_already_exist", topics=[vitals_topic])
         return
 
     futures = admin.create_topics(topics_to_create)
