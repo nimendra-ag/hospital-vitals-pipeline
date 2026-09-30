@@ -88,11 +88,11 @@ export default function TrendsPage() {
               <YAxis yAxisId="score" orientation="right" domain={[0, 100]} tick={{ fontSize: 11 }} />
               <Tooltip labelFormatter={(d) => `Simulated day ${d}`} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar yAxisId="count" dataKey="low" stackId="lvl" name="Low" fill={RISK_COLORS.LOW} />
-              <Bar yAxisId="count" dataKey="moderate" stackId="lvl" name="Moderate" fill={RISK_COLORS.MODERATE} />
-              <Bar yAxisId="count" dataKey="high" stackId="lvl" name="High" fill={RISK_COLORS.HIGH} />
-              <Bar yAxisId="count" dataKey="critical" stackId="lvl" name="Critical" fill={RISK_COLORS.CRITICAL} />
-              <Line yAxisId="score" type="monotone" dataKey="avg_risk" name="Average risk" stroke="#1e293b" strokeWidth={2} dot={{ r: 3 }} />
+              <Bar isAnimationActive={false} yAxisId="count" dataKey="low" stackId="lvl" name="Low" fill={RISK_COLORS.LOW} />
+              <Bar isAnimationActive={false} yAxisId="count" dataKey="moderate" stackId="lvl" name="Moderate" fill={RISK_COLORS.MODERATE} />
+              <Bar isAnimationActive={false} yAxisId="count" dataKey="high" stackId="lvl" name="High" fill={RISK_COLORS.HIGH} />
+              <Bar isAnimationActive={false} yAxisId="count" dataKey="critical" stackId="lvl" name="Critical" fill={RISK_COLORS.CRITICAL} />
+              <Line isAnimationActive={false} yAxisId="score" type="monotone" dataKey="avg_risk" name="Average risk" stroke="#1e293b" strokeWidth={2} dot={{ r: 3 }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>

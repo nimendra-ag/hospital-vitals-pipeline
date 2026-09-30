@@ -33,11 +33,11 @@ export function VitalsTrendChart({ windows, vitalKey }: { windows: VitalsWindow[
         <ResponsiveContainer width="100%" height={160}>
           <LineChart data={data} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
             <XAxis dataKey="time" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-            <YAxis tick={{ fontSize: 10 }} domain={["dataMin - 5", "dataMax + 5"]} />
+            <YAxis tick={{ fontSize: 10 }} domain={["dataMin - 5", "dataMax + 5"]} tickFormatter={(v: number) => (Math.abs(v) >= 50 ? v.toFixed(0) : v.toFixed(1))} />
             <Tooltip />
             <ReferenceLine y={low} stroke="#10b981" strokeDasharray="4 4" />
             <ReferenceLine y={high} stroke="#10b981" strokeDasharray="4 4" />
-            <Line type="monotone" dataKey="value" stroke="#334155" strokeWidth={2} dot={{ r: 2 }} connectNulls />
+            <Line isAnimationActive={false} type="monotone" dataKey="value" stroke="#334155" strokeWidth={2} dot={{ r: 2 }} connectNulls />
           </LineChart>
         </ResponsiveContainer>
       )}

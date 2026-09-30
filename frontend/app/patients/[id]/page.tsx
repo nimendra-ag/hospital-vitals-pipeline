@@ -120,9 +120,9 @@ export default function PatientDetailPage() {
                       <XAxis dataKey="simulated_day" tick={{ fontSize: 10 }} />
                       <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} />
                       <Tooltip />
-                      <Line type="monotone" dataKey="combined_risk" name="Combined" stroke="#ef4444" strokeWidth={2} dot={{ r: 2 }} />
-                      <Line type="monotone" dataKey="vitals_risk" name="Vitals" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
-                      <Line type="monotone" dataKey="lab_risk" name="Lab" stroke="#a855f7" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
+                      <Line isAnimationActive={false} type="monotone" dataKey="combined_risk" name="Combined" stroke="#ef4444" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line isAnimationActive={false} type="monotone" dataKey="vitals_risk" name="Vitals" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
+                      <Line isAnimationActive={false} type="monotone" dataKey="lab_risk" name="Lab" stroke="#a855f7" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
