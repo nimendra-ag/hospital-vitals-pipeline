@@ -53,6 +53,9 @@ export interface Alert {
   vital_value: number | null;
   threshold: number | null;
   triggered_at: string;
+  event_id: string | null;
+  occurrences: number;
+  last_seen_at: string | null;
 }
 
 export interface ActiveAlerts {
@@ -74,9 +77,14 @@ export interface RiskReportPatient {
   abnormal_vitals: number;
   abnormal_labs: number;
   risk_factors: string;
+  risk_change: number | null;
+  readings_analyzed: number;
+  heart_rate_trend: number | null;
+  spo2_trend: number | null;
 }
 
 export interface DailyRiskReport {
+  simulated_day: number;
   report_date: string;
   generated_at: string | null;
   total_patients: number;
@@ -100,6 +108,7 @@ export interface PatientLabs {
 
 export interface RiskHistoryPoint {
   report_date: string;
+  simulated_day: number;
   combined_risk: number;
   vitals_risk: number;
   lab_risk: number;
@@ -110,6 +119,7 @@ export interface PatientRiskHistory {
   patient_id: string;
   latest: {
     report_date: string;
+    simulated_day: number;
     risk_level: RiskLevel;
     combined_risk: number;
     vitals_risk: number;
@@ -120,3 +130,67 @@ export interface PatientRiskHistory {
 }
 
 export type Status = "normal" | "watch" | "critical";
+
+// ── Ward trends (GET /api/ward/risk-history) ──────────────────────
+export type Direction = "improving" | "worsening" | "stable" | "new";
+
+export interface DayScore {
+  simulated_day: number;
+  combined_risk: number;
+  vitals_risk: number;
+  lab_risk: number;
+  risk_level: RiskLevel;
+}
+
+export interface PatientRiskTrend {
+  patient_id: string;
+  name: string;
+  scores: DayScore[];
+  latest_change: number | null;
+  direction: Direction;
+}
+
+export interface WardDaySummary {
+  simulated_day: number;
+  avg_risk: number;
+  critical: number;
+  high: number;
+  moderate: number;
+  low: number;
+}
+
+export interface WardRiskHistory {
+  days: number[];
+  patients: PatientRiskTrend[];
+  ward: WardDaySummary[];
+}
+
+// ── Merged real-time + batch view (GET /api/ward/risk) ────────────
+export interface WardRiskPatient {
+  patient_id: string;
+  name: string;
+  ward: string;
+  bed: string;
+  outlook: RiskLevel;
+  concerns: string[];
+  realtime: {
+    early_warning_score: number;
+    early_warning_level: "LOW" | "MEDIUM" | "HIGH";
+    heart_rate: number | null;
+    spo2: number | null;
+    hr_trend_per_min: number | null;
+    spo2_trend_per_min: number | null;
+    last_window_end: string | null;
+  };
+  batch: {
+    simulated_day: number;
+    risk_level: RiskLevel;
+    combined_risk: number;
+    risk_change_vs_previous_day: number | null;
+  } | null;
+}
+
+export interface WardRisk {
+  timestamp: string;
+  patients: WardRiskPatient[];
+}

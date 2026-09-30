@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AlertTriangle, Check, ShieldCheck } from "lucide-react";
 import { LiveIndicator } from "@/components/LiveIndicator";
 import { api } from "@/lib/api";
+import { formatLocalTime } from "@/lib/clinical";
 import { usePolling } from "@/lib/usePolling";
 import type { Alert } from "@/lib/types";
 
@@ -90,7 +91,15 @@ function Section({
                 · {a.alert_type.replace(/_/g, " ").toLowerCase()}
               </p>
               <p className="text-sm text-slate-700">{a.message}</p>
-              <p className="mt-0.5 text-xs text-slate-500">{new Date(a.triggered_at).toLocaleString()}</p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                First {formatLocalTime(a.triggered_at)}
+                {a.occurrences > 1 && (
+                  <>
+                    {" "}· <span className="font-semibold">repeated {a.occurrences}×</span>, last{" "}
+                    {formatLocalTime(a.last_seen_at)}
+                  </>
+                )}
+              </p>
             </div>
             <button
               onClick={() => onAck(a.id)}

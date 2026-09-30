@@ -84,3 +84,17 @@ export function formatAge(seconds: number | null): string {
   const hours = Math.floor(minutes / 60);
   return `${hours}h ago`;
 }
+
+/** API timestamps are naive UTC ("2026-09-30 15:07:38"); show them in local time. */
+export function formatLocalTime(ts: string | null): string {
+  if (!ts) return "";
+  const iso = ts.includes("T") ? ts : ts.replace(" ", "T");
+  return new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`).toLocaleString();
+}
+
+export const RISK_COLORS: Record<RiskLevel, string> = {
+  LOW: "#10b981",
+  MODERATE: "#facc15",
+  HIGH: "#f59e0b",
+  CRITICAL: "#ef4444",
+};

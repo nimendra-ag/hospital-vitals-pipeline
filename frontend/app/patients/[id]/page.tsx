@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, FlaskConical } from "lucide-react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { LiveIndicator } from "@/components/LiveIndicator";
+import { RiskBreakdown } from "@/components/RiskExplainer";
 import { StatusBadge } from "@/components/StatusBadge";
 import { VitalTile } from "@/components/VitalTile";
 import { VitalsTrendChart } from "@/components/VitalsTrendChart";
@@ -78,10 +79,18 @@ export default function PatientDetailPage() {
             <>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="text-xs text-slate-400">As of {risk.data.latest.report_date}</p>
+                  <p className="text-xs text-slate-400">As of simulated day {risk.data.latest.simulated_day}</p>
                   <p className="text-2xl font-bold text-slate-900">
                     Combined risk: {risk.data.latest.combined_risk.toFixed(0)} / 100
                   </p>
+                  <div className="mt-1">
+                    <RiskBreakdown
+                      vitals={risk.data.latest.vitals_risk}
+                      lab={risk.data.latest.lab_risk}
+                      combined={risk.data.latest.combined_risk}
+                      level={risk.data.latest.risk_level}
+                    />
+                  </div>
                 </div>
                 <StatusBadge status={riskStatus} />
               </div>
@@ -104,14 +113,16 @@ export default function PatientDetailPage() {
               {risk.data.history.length > 1 && (
                 <div className="mt-4">
                   <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-500">
-                    Combined risk score, last {risk.data.history.length} days
+                    Combined risk score, last {risk.data.history.length} simulated days
                   </p>
-                  <ResponsiveContainer width="100%" height={100}>
+                  <ResponsiveContainer width="100%" height={160}>
                     <LineChart data={risk.data.history} margin={{ top: 4, right: 12, left: -24, bottom: 0 }}>
-                      <XAxis dataKey="report_date" tick={{ fontSize: 10 }} />
+                      <XAxis dataKey="simulated_day" tick={{ fontSize: 10 }} />
                       <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} />
                       <Tooltip />
-                      <Line type="monotone" dataKey="combined_risk" stroke="#ef4444" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line type="monotone" dataKey="combined_risk" name="Combined" stroke="#ef4444" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line type="monotone" dataKey="vitals_risk" name="Vitals" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
+                      <Line type="monotone" dataKey="lab_risk" name="Lab" stroke="#a855f7" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>

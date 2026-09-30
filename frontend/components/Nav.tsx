@@ -7,6 +7,7 @@ import { HeartPulse } from "lucide-react";
 
 const LINKS = [
   { href: "/", label: "Ward Overview" },
+  { href: "/trends", label: "Trends" },
   { href: "/alerts", label: "Alerts" },
   { href: "/reports", label: "Daily Report" },
 ];

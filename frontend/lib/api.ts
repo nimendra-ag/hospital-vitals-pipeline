@@ -4,6 +4,8 @@ import type {
   PatientLabs,
   PatientRiskHistory,
   PatientVitalsTrend,
+  WardRisk,
+  WardRiskHistory,
   WardStatus,
 } from "./types";
 
@@ -45,6 +47,14 @@ export const api = {
     apiPost<{ status: string; alert_id: number }>(`/api/alerts/${alertId}/acknowledge`),
   latestReport: () => apiGet<DailyRiskReport>("/api/reports/latest"),
   reportByDate: (date: string) => apiGet<DailyRiskReport>(`/api/reports/daily/${date}`),
+  reportByDay: (day: number) => apiGet<DailyRiskReport>(`/api/reports/day/${day}`),
+  reportDays: () =>
+    apiGet<{ days: { simulated_day: number; report_date: string }[] }>("/api/reports/days"),
+  wardRisk: () => apiGet<WardRisk>("/api/ward/risk"),
+  wardRiskHistory: (days = 10) => apiGet<WardRiskHistory>(`/api/ward/risk-history?days=${days}`),
+  /** Direct link (browser download) to one simulated day's report. */
+  reportDownloadUrl: (day: number, format: "csv" | "html" | "json") =>
+    `${BASE_URL}/api/reports/day/${day}/download?format=${format}`,
 };
 
 export { ApiError };
